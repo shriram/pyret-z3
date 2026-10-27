@@ -1,0 +1,13 @@
+{
+  "name": "pyret-z3-vscode-check",
+  "private": true,
+  "description": "Runs a Pyret file inside the Pyret VS Code extension (VS Code for the Web, headless) and reports the check-block results.",
+  "scripts": {
+    "serve": "vscode-test-web --browser none --quality stable --port 3100 --extensionDevelopmentPath=$HOME/.vscode/extensions/pyretprogramminglanguage.pyret-parley-0.44.11 ../..",
+    "check": "node run-in-vscode-web.js"
+  },
+  "devDependencies": {
+    "@vscode/test-web": "^0.0.81",
+    "playwright": "^1.50.0"
+  }
+}

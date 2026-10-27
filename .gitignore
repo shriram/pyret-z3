@@ -1,0 +1,7 @@
+# Pyret compiled artifacts
+.pyret/
+*.jarr
+.DS_Store
+src/tools/node_modules/
+src/tools/.vscode-test-web/
+src/tools/*.png
