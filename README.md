@@ -189,7 +189,7 @@ library rejects a comparison whose operand is a Boolean term; write
 | `z3.arr` | The library your program imports. |
 | `z3-shim.js` | Connects Pyret to the solver. |
 | `z3-built.js`, `z3-built.wasm` | Z3 4.16.0, compiled to WebAssembly. |
-| `src/` | Tests, examples, build script, and notes for developers: see [`src/DEVELOPMENT.md`](src/DEVELOPMENT.md). |
+| `src/` | Tests, build script, and notes for developers: see [`src/DEVELOPMENT.md`](src/DEVELOPMENT.md). |
 
 ## Without VS Code, or Offline
 

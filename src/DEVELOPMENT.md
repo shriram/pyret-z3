@@ -15,8 +15,6 @@ starter/               what students copy: a one-line z3-shim.js stub and an
 src/build-z3-wasm.sh   reproduces the build from the Z3 source tree
 src/z3-shim-native.c   a tiny C helper linked into the build
 src/z3-tests.arr       tests of the library and the shim
-src/reqs-poc/          a small subset of the ScB requirements checker (not the
-                       full rules)
 src/tools/             runs a Pyret file inside the VS Code extension, headless
 ```
 
@@ -133,15 +131,12 @@ without changing the Pyret editor:
 
 ## Testing
 
-On the command line, from each file's own directory:
+On the command line, from `src/`:
 
 ```bash
 cd src && pyret -q z3-tests.arr
 ```
 
-```bash
-cd src/reqs-poc && pyret -q tests.arr
-```
 
 Inside the VS Code extension (VS Code for the Web in headless Chromium, which
 like the desktop extension has no cross-origin isolation): in `src/tools`,
