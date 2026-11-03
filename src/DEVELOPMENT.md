@@ -15,7 +15,6 @@ starter/               what students copy: a one-line z3-shim.js stub and an
 src/build-z3-wasm.sh   reproduces the build from the Z3 source tree
 src/z3-shim-native.c   a tiny C helper linked into the build
 src/z3-tests.arr       tests of the library and the shim
-src/labassign-poc/     the lab-assignment problem as a Z3 optimisation
 src/reqs-poc/          a small subset of the ScB requirements checker (not the
                        full rules)
 src/tools/             runs a Pyret file inside the VS Code extension, headless
@@ -138,10 +137,6 @@ On the command line, from each file's own directory:
 
 ```bash
 cd src && pyret -q z3-tests.arr
-```
-
-```bash
-cd src/labassign-poc && pyret -q labassign.arr
 ```
 
 ```bash
