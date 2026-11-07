@@ -6,11 +6,16 @@ the solver are downloaded when you run.
 
 ## Getting Started
 
-1. Download the two files in [`starter/`](starter/) into the folder of your
-   program: `z3-shim.js` (never edit it) and `example.arr` (a program to
-   start from).
-2. Open `example.arr` in VS Code and click Run. The first run downloads the
-   solver (22 MB); later runs reuse it.
+You need one file: [`starter/z3-shim.js`](starter/z3-shim.js). Download it
+into the folder of your program and never edit it. It is a one-line stub
+that the library loads from your folder; the stub in turn fetches the real
+shim from this repository.
+
+If this is your first time, also download
+[`starter/example.arr`](starter/example.arr) into the same folder, open it in
+VS Code, and click Run. It exercises the whole setup, so a passing run
+confirms that everything works. The first run downloads the solver (22 MB);
+later runs reuse it.
 
 To use Z3 in a program of your own, keep it in a folder that has `z3-shim.js`
 and start it the way `example.arr` does:
@@ -185,7 +190,7 @@ library rejects a comparison whose operand is a Boolean term; write
 
 | | |
 |---|---|
-| `starter/` | The two files to download. |
+| `starter/` | The stub to download, and an example program to confirm the setup. |
 | `z3.arr` | The library your program imports. |
 | `z3-shim.js` | Connects Pyret to the solver. |
 | `z3-built.js`, `z3-built.wasm` | Z3 4.16.0, compiled to WebAssembly. |
