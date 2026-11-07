@@ -31,6 +31,8 @@ provide:
   model-num, model-bool,
   # escape hatches
   raw, to-smt, smt-eval, z3-version,
+  # predicates
+  is-Term,
   # types
   type Term, type Constraints, type Soft, type Softs, type Model,
   data Sort, data Value, data Result
