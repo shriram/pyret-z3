@@ -1,12 +1,14 @@
 # Development Notes
 
 How the pieces fit, why they are the way they are, and how to test and
-upgrade them. The student-facing instructions are in the top-level README.
+upgrade them. The student-facing instructions are in the top-level README,
+and the reference documentation in `docs.md`.
 
 ## Layout
 
 ```
 z3.arr                 the Pyret library (students import it by URL)
+docs.md                the reference: every provided name and every method
 z3-shim.js             the js-file module: loads the WebAssembly build, exposes
                        z3-version, smt-eval, smt-solve
 z3-built.js, .wasm     Z3 4.16.0 compiled with Emscripten, single-threaded
@@ -15,6 +17,10 @@ starter/               what students copy: a one-line z3-shim.js stub and an
 src/build-z3-wasm.sh   reproduces the build from the Z3 source tree
 src/z3-shim-native.c   a tiny C helper linked into the build
 src/z3-tests.arr       tests of the library and the shim
+src/docs-tests.arr     checks that docs.md covers the whole provide block
+src/docs-examples.arr  checks every behavioural claim in docs.md, one check
+                       block per section
+src/source-files.js    js-file module that lets docs-tests.arr read files
 src/tools/             runs a Pyret file inside the VS Code extension, headless
 ```
 
@@ -66,7 +72,7 @@ SMT-LIB, a sort checker, and a public surface in which every value a program
 can build goes through a checking constructor:
 
 - Operators on terms (`_plus` and friends), with numbers and Booleans lifted
-  and Boolean terms counted as 0/1 in arithmetic. Pyret dispatches on the left
+  and Bool terms counted as 0/1 in arithmetic. Pyret dispatches on the left
   operand, so the term must be on the left; `==`, `and`, `or`, `not` cannot
   be overloaded.
 - Constructor notation: `[conj: ...]`, `[sum: ...]`, `[all-different: ...]`,
@@ -74,10 +80,10 @@ can build goes through a checking constructor:
   object also has `over(f, xs)`, so `for exactly(k).over(x from xs)` works
   because a method accessed as a field is a function.
 - `Constraints` is a nominal type; `[constraints: ...]` checks that every
-  element is a Boolean term, splices nested constraints, and rejects raw
+  element is a Bool term, splices nested constraints, and rejects raw
   Pyret Booleans with a hint about `.eq`, since `x == 3` is structural
   equality on terms and silently yields `false`.
-- Errors name the position: "element 2 of 3 of conj should be a Boolean
+- Errors name the position: "element 2 of 3 of conj should be a Bool
   term, but x is an Int". The sort checker (`sort-of`) walks the whole term,
   so a deep term built by folding operators costs quadratic time; the
   aggregators build flat terms.
@@ -137,6 +143,33 @@ On the command line, from `src/`:
 cd src && pyret -q z3-tests.arr
 ```
 
+```bash
+cd src && pyret -q docs-tests.arr
+```
+
+The second checks that every name in the `provide:` block, and every
+`method` on the library's data types (written with a leading dot, `.eq`),
+appears in backquotes in `docs.md`;
+the Index table at the end of `docs.md` is where they all live. Add to the
+provide block and the test fails until the name is documented. It runs on
+the command line only, since it reads files through Node.
+
+```bash
+cd src && pyret -q docs-examples.arr
+```
+
+The third checks every behavioural claim in `docs.md` (serialisations,
+error messages, solver answers), with one check block per section of the
+docs named `docs: <Section>: ...`, so that a library change that falsifies
+a sentence in the docs fails a test that names the section; change the
+docs and the library together.
+
+A rule for `docs.md` that follows from this: describe errors (when they
+arise, what the message points at) but never quote an error message's text.
+Quoted text drifts as soon as the wording changes, and one quoted message
+turned out never to have been produced at all. The exact texts belong in
+`docs-examples.arr` and `z3-tests.arr`, where a change makes a test fail.
+
 
 Inside the VS Code extension (VS Code for the Web in headless Chromium, which
 like the desktop extension has no cross-origin isolation): in `src/tools`,
@@ -147,7 +180,7 @@ editor webview, clicks Run, and prints the check summary. The extension path
 in `package.json` names the installed extension version.
 
 The likely regressions are negative numbers and rationals in model output,
-the Boolean-to-0/1 lifting in objectives, and the element-position messages.
+the Bool-to-0/1 lifting in objectives, and the element-position messages.
 
 ## Upgrading Z3
 
