@@ -28,5 +28,5 @@ end
 
 check "mistakes are caught before Z3 sees them":
   [Z.constraints: x == 5] raises "use .eq, not =="
-  [Z.constraints: x + 5] raises "should be a Boolean term"
+  [Z.constraints: x + 5] raises "should be a Bool term"
 end

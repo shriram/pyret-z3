@@ -89,7 +89,7 @@ end
 
 check "sort checker, through the public constructors":
   r = real-var("r")
-  # Int and Real mix; Bool does not mix with numbers
+  # Int and Real mix; Bool does not mix with either
   (x + r).to-smt() is "(+ x r)"
   (x < r).to-smt() is "(< x r)"
   x.eq(r).to-smt() is "(= x r)"
@@ -101,8 +101,8 @@ check "sort checker, through the public constructors":
   [conj: p, raw("q")].to-smt() is "(and p q)"
   (x + raw("y")).to-smt() is "(+ x y)"
   # nested errors name the innermost offending subterm
-  p.negate().and-also(p + x) raises "the right side of .and-also should be a Boolean term, but (+ (ite p 1 0) x) is an Int"
-  [conj: p, (x < y).and-also(x)] raises "the right side of .and-also should be a Boolean term, but x is an Int"
+  p.negate().and-also(p + x) raises "the right side of .and-also should be a Bool term, but (+ (ite p 1 0) x) is an Int"
+  [conj: p, (x < y).and-also(x)] raises "the right side of .and-also should be a Bool term, but x is an Int"
 end
 
 check "operators on terms":
@@ -122,7 +122,7 @@ check "operators on terms":
   to-smt(p.iff(q)) is "(= p q)"
   to-smt(p.eq(q)) is "(= p q)"
   (x + y).to-smt() is "(+ x y)"
-  # Boolean terms count as 0/1 in arithmetic
+  # Bool terms count as 0/1 in arithmetic
   to-smt((p + q) <= 1) is "(<= (+ (ite p 1 0) (ite q 1 0)) 1)"
   to-smt(p * 3) is "(* (ite p 1 0) 3)"
   to-smt((x < y) + 1) is "(+ (ite (< x y) 1 0) 1)"
@@ -137,26 +137,26 @@ end
 check "operators catch mistakes":
   lift("no") raises "cannot be used as a Z3 term"
   (x + "one") raises "the right side of + cannot be used as a Z3 term"
-  p.and-also(x) raises "the right side of .and-also should be a Boolean term, but x is an Int"
-  x.or-else(p) raises "the left side of .or-else should be a Boolean term"
-  x.negate() raises "the term before .negate should be a Boolean term"
+  p.and-also(x) raises "the right side of .and-also should be a Bool term, but x is an Int"
+  x.or-else(p) raises "the left side of .or-else should be a Bool term"
+  x.negate() raises "the term before .negate should be a Bool term"
   x.eq(p) raises "x is an Int but p is a Bool"
-  p.implies(1) raises "the right side of .implies should be a Boolean term, but 1 is an Int"
-  ite(x, x, y) raises "the condition of ite should be a Boolean term"
+  p.implies(1) raises "the right side of .implies should be a Bool term, but 1 is an Int"
+  ite(x, x, y) raises "the condition of ite should be a Bool term"
   ite(p, p, y) raises "p is a Bool but y is an Int"
-  # order comparisons refuse Boolean operands on either side; Pyret parses
+  # order comparisons refuse Bool operands on either side; Pyret parses
   # x > y > 2 as (x > y) > 2, which would otherwise be silently false
   (x > y > 2) raises "chained comparisons such as x > y > 2 are not supported"
   (x > y > 2) raises "the left side of >"
   (x < p) raises "the right side of <"
   (p <= 1) raises "the left side of <="
-  (x < y < 2) raises "the left side of < is the Boolean term (< x y)"
-  (x <= p) raises "the right side of <= is the Boolean term p"
-  (p > 1) raises "the left side of > is the Boolean term p"
-  (x >= y >= 0) raises "the left side of >= is the Boolean term (>= x y)"
+  (x < y < 2) raises "the left side of < is the Bool term (< x y)"
+  (x <= p) raises "the right side of <= is the Bool term p"
+  (p > 1) raises "the left side of > is the Bool term p"
+  (x >= y >= 0) raises "the left side of >= is the Bool term (>= x y)"
   (x >= p) raises "the right side of >="
-  (x > true) raises "the right side of > is the Boolean term true"
-  # arithmetic on Booleans is still fine; the sum is an Int term
+  (x > true) raises "the right side of > is the Bool term true"
+  # arithmetic on Bool terms is still fine; the sum is an Int term
   ((p + q) <= 1).to-smt() is "(<= (+ (ite p 1 0) (ite q 1 0)) 1)"
 end
 
@@ -174,10 +174,10 @@ check "constructor notation":
   to-smt([at-most(1): ]) is "true"
   to-smt(for exactly(1).over(v from [list: p, q]): v end) is "((_ pbeq 1 1 1) p q)"
   to-smt(for conj.over(v from [list: x, y]): v > 0 end) is "(and (> x 0) (> y 0))"
-  [conj: p, x] raises "element 2 of 2 of conj should be a Boolean term, but x is an Int"
-  [disj: p, 1] raises "element 2 of 2 of disj should be a Boolean term"
+  [conj: p, x] raises "element 2 of 2 of conj should be a Bool term, but x is an Int"
+  [disj: p, 1] raises "element 2 of 2 of disj should be a Bool term"
   [sum: x, "a"] raises "element 2 of 2 of sum cannot be used as a Z3 term"
-  [exactly(1): p, x] raises "element 2 of 2 of exactly(1) should be a Boolean term"
+  [exactly(1): p, x] raises "element 2 of 2 of exactly(1) should be a Bool term"
   exactly(-1) raises "exactly needs a non-negative integer"
   at-most(1/2) raises "at-most needs a non-negative integer"
 end
@@ -195,7 +195,7 @@ check "aggregators with for":
     is "(and (=> p q) (=> p true))"
   (for each-of2(a from [list: 1, 2], b from [list: 1, 2, 3]): x <= (a * b) end).length() is 6
   to-smt(for any-of2(a from [list: p], b from [list: q]): a.and-also(b) end) is "(and p q)"
-  (for all-of(v from vs): v end) raises "element 1 of 3 of all-of should be a Boolean term"
+  (for all-of(v from vs): v end) raises "element 1 of 3 of all-of should be a Bool term"
   (for each-of(i from [list: 1, 2]): i == 1 end) raises "element 1 of 2 of each-of is the Pyret Boolean true"
 end
 
@@ -221,7 +221,7 @@ check "the constraints constructor":
   ([constraints: p] + [constraints: q]).length() is 2
   [constraints: lift(true)].length() is 1
   [constraints: x > 2].script() is "(declare-const x Int)\n(assert (> x 2))\n(check-sat)"
-  [constraints: x > 7, x + y] raises "element 2 of 2 of constraints should be a Boolean term, but (+ x y) is an Int"
+  [constraints: x > 7, x + y] raises "element 2 of 2 of constraints should be a Bool term, but (+ x y) is an Int"
   [constraints: x == 3] raises "element 1 of 1 of constraints is the Pyret Boolean false"
   [constraints: x == 3] raises "use .eq, not =="
   [constraints: p, 3] raises "element 2 of 2 of constraints is not a constraint: 3"
@@ -234,7 +234,7 @@ end
 check "soft constraints":
   [softs: soft(p, 1), soft(q, 5)].items.length() is 2
   ([softs: soft(p, 1)] + [softs: soft(q, 2)]).items.length() is 2
-  soft(x, 1) raises "the constraint of soft should be a Boolean term"
+  soft(x, 1) raises "the constraint of soft should be a Bool term"
   soft(p, 0) raises "must be positive"
   [softs: p] raises "element 1 of 1 of softs is not a soft constraint"
 end
@@ -250,7 +250,7 @@ check "solve, as functions and as methods":
   [constraints: p, p.negate()].satisfiable() is false
   valid(p.or-else(p.negate())) is true
   valid(p) is false
-  valid(x) raises "the argument of valid should be a Boolean term"
+  valid(x) raises "the argument of valid should be a Bool term"
   # a sat result mentions every variable, including ones only in soft terms
   r2 = solve-soft([constraints: [at-most(1): p, q]], [softs: soft(p, 1), soft(q, 5)])
   model-bool(r2.model, "q") is true
@@ -282,7 +282,7 @@ check "term-based model lookup":
   r2 = solve([constraints: p.or-else(q), p.negate()])
   r2.model.bool(q) is true
   r2.model.bool(p) is false
-  r2.model.num(q) raises "not a number"
+  r2.model.num(q) raises "not an Int or a Real"
   r2.model.names() is [list: "p", "q"]
   model-bool(r2.model, "q") is true
   # a family end to end: exactly one of three, the cheapest wins
@@ -293,8 +293,33 @@ check "term-based model lookup":
     for sum-over(c from costs): choice(c.{0}) * c.{1} end)
   r3.model.bool(choice("b")) is true
   r3.model.bool(choice("a")) is false
-  # a Boolean objective is maximised as 0/1
+  # a Bool objective is maximised as 0/1
   r4 = maximize([constraints: (p + q) <= 1], q)
   r4.model.bool(q) is true
   r4.model.bool(p) is false
+end
+
+check "modulo":
+  r = real-var("r")
+  to-smt(x.modulo(3)) is "(mod x 3)"
+  to-smt(x.modulo(y)) is "(mod x y)"
+  to-smt(p.modulo(2)) is "(mod (ite p 1 0) 2)"
+  r.modulo(2) raises "needs Int operands, but one is a Real"
+  x.modulo(r) raises "needs Int operands, but one is a Real"
+  x.modulo("a") raises "the argument of .modulo cannot be used as a Z3 term"
+  # Z3's mod always yields a non-negative remainder
+  m1 = solve([constraints: x.eq(-7), x.modulo(3).eq(y)]).model
+  m1.num(y) is 2
+  m2 = solve([constraints: x > 10, x < 13, x.modulo(3).eq(2)]).model
+  m2.num(x) is 11
+end
+
+check "xor":
+  to-smt(p.xor(q)) is "(xor p q)"
+  to-smt(p.xor(true)) is "(xor p true)"
+  x.xor(p) raises "the left side of .xor should be a Bool term, but x is an Int"
+  p.xor(x) raises "the right side of .xor should be a Bool term, but x is an Int"
+  m = solve([constraints: p.xor(q), p]).model
+  m.bool(q) is false
+  satisfiable([constraints: p.xor(q), p, q]) is false
 end

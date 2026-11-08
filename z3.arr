@@ -80,7 +80,7 @@ data Term:
   | t-div(a :: Term, b :: Term)     # integer division (div) or real division (/)
   | t-mod(a :: Term, b :: Term)
   | t-bool-to-int(b :: Term)        # (ite b 1 0)
-  # cardinality over Boolean terms (Z3's pseudo-Boolean constraints)
+  # cardinality over Bool terms (Z3's pseudo-Boolean constraints)
   | t-at-most(k :: Number, ts :: List<Term>)
   | t-at-least(k :: Number, ts :: List<Term>)
   | t-exactly(k :: Number, ts :: List<Term>)
@@ -89,9 +89,9 @@ data Term:
 sharing:
   # Operators. Pyret dispatches `+`, `-`, `*`, `/`, `<`, `<=`, `>`, `>=` to
   # these when the LEFT operand is a Term; the right operand may be a Term,
-  # a Number, or a Boolean. Boolean-sorted operands of arithmetic count as
+  # a Number, or a Boolean. Bool-sorted operands of arithmetic count as
   # 0/1, so `p + q <= 1` means "at most one". The order comparisons refuse
-  # Boolean operands on either side: Pyret parses `x > y > 2` as
+  # Bool operands on either side: Pyret parses `x > y > 2` as
   # `(x > y) > 2`, which would otherwise be a silently false (> (ite ..) 2).
   # `==`, `and`, `or`, and `not` cannot be overloaded: use `.eq`,
   # `.and-also`, `.or-else`, and `.negate`.
@@ -106,6 +106,7 @@ sharing:
   method eq(self, other): checked(t-eq(self, lift-elem("the argument of .eq", other))) end,
   method neq(self, other): t-not(checked(t-eq(self, lift-elem("the argument of .neq", other)))) end,
   method neg(self): t-neg(arith(self)) end,
+  method modulo(self, other): checked(t-mod(arith(self), arith-elem("the argument of .modulo", other))) end,
   method negate(self): t-not(bool-elem("the term before .negate", self)) end,
   method and-also(self, other):
     t-and([list: bool-elem("the left side of .and-also", self), bool-elem("the right side of .and-also", other)])
@@ -118,6 +119,9 @@ sharing:
   end,
   method iff(self, other):
     t-iff(bool-elem("the left side of .iff", self), bool-elem("the right side of .iff", other))
+  end,
+  method xor(self, other):
+    t-xor(bool-elem("the left side of .xor", self), bool-elem("the right side of .xor", other))
   end,
   method to-smt(self) -> String: to-smt(self) end
 end
@@ -172,7 +176,7 @@ end
 
 fun check-num(parent :: Term, x :: Term) -> Option<Sort>:
   cases (Option) sort-of(x):
-    | some(s) => if s == bool-sort: sort-error(parent, x, "a number") else: some(s) end
+    | some(s) => if s == bool-sort: sort-error(parent, x, "an Int or a Real") else: some(s) end
     | none => none
   end
 end
@@ -186,7 +190,7 @@ fun num-join(sorts :: List<Option<Sort>>) -> Option<Sort>:
 end
 
 fun check-same(parent :: Term, a :: Term, b :: Term) -> Option<Sort>:
-  doc: "Two terms that must have the same kind of sort (both Bool, or both numbers)."
+  doc: "Two terms that must have the same kind of sort (both Bool, or both Int/Real)."
   sa = sort-of(a)
   sb = sort-of(b)
   a-bool = sa == some(bool-sort)
@@ -256,7 +260,16 @@ fun sort-of(t :: Term) -> Option<Sort>:
     | t-mul(xs) => all-num(xs)
     | t-neg(a) => all-num([list: a])
     | t-div(a, b) => all-num([list: a, b])
-    | t-mod(a, b) => all-num([list: a, b])
+    | t-mod(a, b) =>
+      # Z3's mod is defined on Int only
+      cases (Option) all-num([list: a, b]):
+        | some(s) =>
+          if s == real-sort:
+            raise("Ill-sorted term: " + to-smt(t) + " needs Int operands, but one is a Real")
+          else: some(int-sort)
+          end
+        | none => none
+      end
     | t-bool-to-int(b) => block:
         check-bool(t, b)
         some(int-sort)
@@ -306,19 +319,19 @@ fun lift-elem(where :: String, x) -> Term:
 end
 
 fun bool-elem(where :: String, x) -> Term:
-  doc: "A Boolean-sorted term (checked), from a term or a Boolean."
+  doc: "A Bool-sorted term (checked), from a term or a Boolean."
   t = lift-elem(where, x)
   cases (Option) sort-of(t):
     | some(s) =>
       if s == bool-sort: t
-      else: raise(where + " should be a Boolean term, but " + to-smt(t) + " is " + sort-name(s))
+      else: raise(where + " should be a Bool term, but " + to-smt(t) + " is " + sort-name(s))
       end
     | none => t
   end
 end
 
 fun arith(t :: Term) -> Term:
-  doc: "A term usable in arithmetic: Boolean terms become (ite t 1 0)."
+  doc: "A term usable in arithmetic: Bool terms become (ite t 1 0)."
   cases (Option) sort-of(t):
     | some(s) => if s == bool-sort: t-bool-to-int(t) else: t end
     | none => t
@@ -326,18 +339,18 @@ fun arith(t :: Term) -> Term:
 end
 
 fun arith-elem(where :: String, x) -> Term:
-  doc: "A number-sorted term (checked), from a term, a Number, or a Boolean (as 0/1)."
+  doc: "An Int- or Real-sorted term (checked), from a term, a Number, or a Boolean (as 0/1)."
   arith(lift-elem(where, x))
 end
 
 fun compare-elem(op :: String, side :: String, x) -> Term:
-  doc: "A number-sorted operand of an order comparison; Boolean operands are refused."
+  doc: "An Int- or Real-sorted operand of an order comparison; Bool operands are refused."
   where = "the " + side + " side of " + op
   t = lift-elem(where, x)
   cases (Option) sort-of(t):
     | some(s) =>
       if s == bool-sort:
-        raise(where + " is the Boolean term " + to-smt(t)
+        raise(where + " is the Bool term " + to-smt(t)
             + "; chained comparisons such as x > y > 2 are not supported, write (x > y).and-also(y > 2)")
       else: t
       end
@@ -566,13 +579,13 @@ sharing:
   method num(self, v :: Term) -> Number:
     cases (Value) self.value(v):
       | v-num(n) => n
-      | else => raise("Model value for " + var-name(v) + " is not a number")
+      | else => raise("Model value for " + var-name(v) + " is not an Int or a Real")
     end
   end,
   method bool(self, v :: Term) -> Boolean:
     cases (Value) self.value(v):
       | v-bool(b) => b
-      | else => raise("Model value for " + var-name(v) + " is not a Boolean")
+      | else => raise("Model value for " + var-name(v) + " is not a Bool")
     end
   end,
   method names(self) -> List<String>: self.values.keys-list() end
@@ -844,12 +857,12 @@ fun solve-soft(cs :: Constraints, ss :: Softs) -> Result:
 end
 
 fun maximize(cs :: Constraints, objective) -> Result:
-  doc: "Satisfy the constraints while maximising the objective (a Boolean objective counts as 0/1)."
+  doc: "Satisfy the constraints while maximising the objective (a Bool objective counts as 0/1)."
   run-problem(cs, soft-set(empty), [list: maximize-obj(objective-term("maximize", objective))])
 end
 
 fun minimize(cs :: Constraints, objective) -> Result:
-  doc: "Satisfy the constraints while minimising the objective (a Boolean objective counts as 0/1)."
+  doc: "Satisfy the constraints while minimising the objective (a Bool objective counts as 0/1)."
   run-problem(cs, soft-set(empty), [list: minimize-obj(objective-term("minimize", objective))])
 end
 
@@ -863,7 +876,7 @@ fun satisfiable(cs :: Constraints) -> Boolean:
 end
 
 fun valid(t) -> Boolean:
-  doc: "Is the Boolean term true under every assignment?"
+  doc: "Is the Bool term true under every assignment?"
   not(satisfiable(constraint-set([list: t-not(bool-elem("the argument of valid", t))])))
 end
 
@@ -876,14 +889,14 @@ end
 fun model-num(m :: Model, name :: String) -> Number:
   cases (Value) m.values.get-value(name):
     | v-num(n) => n
-    | else => raise("Model value for " + name + " is not a number")
+    | else => raise("Model value for " + name + " is not an Int or a Real")
   end
 end
 
 fun model-bool(m :: Model, name :: String) -> Boolean:
   cases (Value) m.values.get-value(name):
     | v-bool(b) => b
-    | else => raise("Model value for " + name + " is not a Boolean")
+    | else => raise("Model value for " + name + " is not a Bool")
   end
 end
 
