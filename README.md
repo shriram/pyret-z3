@@ -1,21 +1,24 @@
 # Z3 from Pyret
 
-Use the [Z3](https://github.com/Z3Prover/z3) solver from a Pyret program in
-the Pyret extension for VS Code. There is nothing to install: the library and
-the solver are downloaded when you run.
+Use the [Z3](https://github.com/Z3Prover/z3) solver from a Pyret program, in
+the Pyret extension for VS Code or on the `pyret` command line. There is
+nothing to install: the library and the solver are downloaded when you run.
 
 ## Getting Started
 
 You need one file: [`starter/z3-shim.js`](starter/z3-shim.js). Download it
-into the folder of your program and never edit it. It is a one-line stub
-that the library loads from your folder; the stub in turn fetches the real
-shim from this repository.
+into the folder of your program and never edit it. It is a small stub that
+the library loads from your folder; the stub in turn fetches the real shim,
+and the solver, from this repository. On the command line the first run
+stores them in `~/.cache/pyret-z3` and later runs read them from there;
+delete that folder to force a fresh download.
 
 If this is your first time, also download
-[`starter/example.arr`](starter/example.arr) into the same folder, open it in
-VS Code, and click Run. It exercises the whole setup, so a passing run
-confirms that everything works. The first run downloads the solver (22 MB);
-later runs reuse it.
+[`starter/example.arr`](starter/example.arr) into the same folder and run it:
+open it in VS Code and click Run, or run `pyret example.arr` from that
+folder. It exercises the whole setup, so a passing run confirms that
+everything works. The first run downloads the solver (22 MB); later runs
+reuse it.
 
 To use Z3 in a program of your own, keep it in a folder that has `z3-shim.js`
 and start it the way `example.arr` does:
@@ -196,7 +199,7 @@ library rejects a comparison whose operand is a Boolean term; write
 | `z3-built.js`, `z3-built.wasm` | Z3 4.16.0, compiled to WebAssembly. |
 | `src/` | Tests, build script, and notes for developers: see [`src/DEVELOPMENT.md`](src/DEVELOPMENT.md). |
 
-## Without VS Code, or Offline
+## Offline
 
 Copy `z3.arr`, `z3-shim.js`, `z3-built.js`, and `z3-built.wasm` next to your
 program and write `import file("z3.arr") as Z`. This works in the `pyret`
